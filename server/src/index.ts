@@ -1,15 +1,18 @@
-import { WebSocketServer} from "ws";
-const connections:any= [];
+import { WebSocketServer } from "ws";
+const allSocket: any = [];
 const wss = new WebSocketServer({ port: 8081 });
 wss.on("connection", (ws) => {
-  connections.push(ws);
-  // console.log("WSS CONNECTED 😉");
+  allSocket.push(ws);
+  console.log("Connection established 📡");
   console.log(ws);
   ws.on("message", (message: any) => {
     console.log("📩 Message:", message.toString());
-    connections.forEach((c:any) => {
+    allSocket.forEach((c: any) => {
       c.send(message.toString());
     });
   });
   ws.send("Hello Everyone 🙋🏻");
+  ws.on("disconnect", () => {
+    allSocket.filter((c: any) => c !== ws);
+  });
 });
