@@ -1,18 +1,32 @@
+import { WebSocket } from "ws";
 import { WebSocketServer } from "ws";
-const allSocket: any = [];
+
+const allSocket = new Map<WebSocket, string>();
 const wss = new WebSocketServer({ port: 8081 });
 wss.on("connection", (ws) => {
-  allSocket.push(ws);
   console.log("Connection established 📡");
-  console.log(ws);
   ws.on("message", (message: any) => {
-    console.log("📩 Message:", message.toString());
-    allSocket.forEach((c: any) => {
-      c.send(message.toString());
-    });
+    message = JSON.parse(message);
+    if (message.type === "join") {
+      allSocket.set(ws, message.payload.roomId);
+      ws.send(`Welcome to ${message.payload.roomId}`);
+    }
+    if (message.type === "chat") {
+      const roomId = allSocket.get(ws);
+      allSocket.forEach((room, socket) => {
+        console.log("in-side for each");
+        console.log("message", message);
+        console.log("roomId", roomId);
+        console.log("room", room);
+        if (room === roomId && socket !== ws) {
+          console.log("sending");
+          socket.send(message.payload.message.toString());
+        }
+      });
+    }
   });
-  ws.send("Hello Everyone 🙋🏻");
-  ws.on("disconnect", () => {
-    allSocket.filter((c: any) => c !== ws);
+
+  ws.on("close", () => {
+    allSocket.delete(ws);
   });
 });
